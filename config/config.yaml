@@ -1,0 +1,92 @@
+samples: config/samples.tsv
+units: config/units.tsv
+
+ref:
+  # recomeneded reference, with chr in the chromosome names
+  url: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+  # ensembl species name
+  species: homo_sapiens
+  # ensembl release
+  release: 98
+  # genome build
+  build: GRCh38
+
+filtering:
+  # Set to true in order to apply machine learning based recalibration of
+  # quality scores instead of hard filtering.
+  vqsr: true
+  hard:
+    # hard filtering as outlined in GATK docs
+    # https://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set
+    # https://gatk.broadinstitute.org/hc/en-us/articles/360035531112--How-to-Filter-variants-either-with-VQSR-or-by-hard-filtering
+    # The GATK does not recommend use of compound filtering expressions, e.g. the logical || "OR". For such expressions, if a record is null for or missing a particular annotation in the expression, the tool negates the entire compound expression and so automatically passes the variant record even if it fails on one of the expressions
+    snvs:
+      QD2: "QD < 2.0"
+      QUAL30: "QUAL < 30.0"
+      SOR3: "SOR > 3.0"
+      FS60: "FS > 60.0"
+      MQ40: "MQ < 40.0"
+      MQRankSum-12.5: "MQRankSum < -12.5"
+      ReadPosRankSum-8: "ReadPosRankSum < -8.0"
+    #  '--filter "QD < 2.0" --filter-name "QD2" --filter "QUAL < 30.0" --filter-name "QUAL30" --filter "SOR > 3.0" --filter-name "SOR3" --filter "FS > 60.0" --filter-name "FS60" --filter "MQ < 40.0" --filter-name "MQ40" --filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5" --filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8"'
+    indels:
+    #  '--filter "QD < 2.0" --filter-name "QD2" --filter "QUAL < 30.0" --filter-name "QUAL30" --filter "FS > 200.0" --filter-name "FS200" --filter "ReadPosRankSum < -20.0" --filter-name "ReadPosRankSum-20"'
+      QD2: "QD < 2.0"
+      QUAL30: "QUAL < 30.0"
+      FS200: "FS > 200.0"
+      ReadPosRankSum-20: "ReadPosRankSum < -20.0"
+  vqsr_resources:
+      path: "/software/databases/gatk"
+      hapmap: "hapmap_3.3.hg38.vcf.gz"
+      dbsnp: "common_all_20180418_with_chr.vcf.gz"
+      omni: "1000G_omni2.5.hg38.vcf.gz"
+      g1k: "1000G_phase1.snps.high_confidence.hg38.vcf.gz"
+      mills: "Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
+  ## call InbreedingCoeff for number of samples bigger than 10
+  vqsr_annotation_filters_snp: "MQ,QD,MQRankSum,ReadPosRankSum,FS,SOR"
+  vqsr_annotation_filters_indels: "MQ,QD,MQRankSum,ReadPosRankSum,FS,SOR"
+
+processing:
+  remove-duplicates: true
+  # Uncomment and point to a bed file with, e.g., captured regions if necessary,
+  # see https://gatkforums.broadinstitute.org/gatk/discussion/4133/when-should-i-use-l-to-pass-in-a-list-of-intervals.
+  # restrict-regions: captured_regions.bed
+  # If regions are restricted, uncomment this to enlarge them by the given value in order to include
+  # flanking areas.
+  # region-padding: 100
+
+params:
+  library: "wgs"    ## 1) wgs - WholeGenomeSeq; 2) wes - WholeExomeSeq
+                    ## For deepVariant can be pacbio and hybrid (pacbio and illumina)
+  algorithm: "gatk"   ## 1) gatk; 2) deepvariant
+  gatk:
+    HaplotypeCaller: ""
+    BaseRecalibrator: ""
+    GenotypeGVCFs: ""
+    VariantRecalibrator: "--max-gaussians 2"  ## optional
+  picard:
+    MarkDuplicates: "REMOVE_DUPLICATES=true"
+  trimmomatic:
+    pe:
+      trimmer:
+        # See trimmomatic manual for adding additional options, e.g. for adapter trimming.
+        - "ILLUMINACLIP:primers/adapters.fasta:3:30:10:6:true"
+        - "SLIDINGWINDOW:4:15"
+        - "LEADING:3"
+        - "TRAILING:3"
+        - "MINLEN:36"
+    se:
+      trimmer:
+        # See trimmomatic manual for adding additional options, e.g. for adapter trimming.
+        - "ILLUMINACLIP:primers/adapters.fasta:3:30:10:6:true"
+        - "SLIDINGWINDOW:4:15"
+        - "LEADING:3"
+        - "TRAILING:3"
+        - "MINLEN:36"
+  vep:
+    plugins:
+      # Add any plugin from https://www.ensembl.org/info/docs/tools/vep/script/vep_plugins.html
+      # Plugin args can be passed as well, e.g. "LoFtool,path/to/custom/scores.txt".
+      - LoFtool
+    # extra command line arguments (e.g. --sift, see docs)
+    extra: ""

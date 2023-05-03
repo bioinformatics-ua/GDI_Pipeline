@@ -1,0 +1,5 @@
+sample	unit	platform	fq1	fq2
+ERR194146	1	ILLUMINA	fastq/ERR194146_1.fastq.gz	fastq/ERR194146_2.fastq.gz
+ERR194147	1	ILLUMINA	fastq/ERR194147_1.fastq.gz	fastq/ERR194147_2.fastq.gz
+ERR194158	1	ILLUMINA	fastq/ERR194158_1.fastq.gz	fastq/ERR194158_2.fastq.gz
+ERR194159	1	ILLUMINA	fastq/ERR194159_1.fastq.gz	fastq/ERR194159_2.fastq.gz
